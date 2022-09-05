@@ -52,12 +52,19 @@ class Pronunciation:
         self.audio = None
 
 
-def prepare_query_string(input_str: str, config: Config) -> str:
-    query = str(input_str)  # clone
-    query = query.strip()
+def prepare_query_string(input_str: str, language: str, config: Config) -> str:
+    query = input_str.strip()
     for char in config.get_config_object("replaceCharacters").value:
         query = query.replace(char, "")
+    query = remove_language_specific_annotations_from_query_string(input_str, language)
     log_debug("[Forvo.py] Using search query: %s" % query)
+    return query
+
+
+def remove_language_specific_annotations_from_query_string(query: str, language: str):
+    if language == "ja":
+        # remove furigana annotation from japanese query
+        query = re.sub(r"\[[^\]]*\]", "", query)
     return query
 
 
@@ -65,7 +72,7 @@ class Forvo:
     def __init__(self, word: str, language: str, mw, config: Config):
         self.html: BeautifulSoup
         self.language = language
-        self.word = prepare_query_string(word, config)
+        self.word = prepare_query_string(word, language, config)
         self.pronunciations: List[Pronunciation] = []
         self.mw = mw
 
